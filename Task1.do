@@ -1,6 +1,5 @@
 *************************************************************************
 * UNICEF P3 Assessment
-* Yitong Hu
 
 * A.1 Cleaning and Processing Global Dataflow from 2018 to 2022 
 * A.2 Cleaning and Processing Population data

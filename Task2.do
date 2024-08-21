@@ -1,6 +1,5 @@
 *************************************************************************
 * UNICEF P3 Assessment
-* Yitong Hu
 
 * RQ: Evolution of education for 4- to 5-year-old children
 * Understanding how educational performance evolves month by month at these critical ages, considering both general education and specific subjects (e.g., literature and math, physical education)
@@ -18,8 +17,7 @@ global unicef "$maindir\UNICEF-P3-assessment-public-main\UNICEF-P3-assessment-pu
 * Read in the csv file
 import delimited "$unicef\Zimbabwe_children_under5_interview.csv"
 
-
-* clean
+* Data cleaning
 replace ec6 = 0 if ec6 == 8 | ec6 == 9
 replace ec7 = 0 if ec7 == 8 | ec7 == 9
 replace ec8 = 0 if ec8 == 8 | ec8 == 9
@@ -57,36 +55,32 @@ foreach var of varlist `vars' {
 
 ** Copy to excels
 
-* arithmetic average of the 10 items
+* Calculate arithmetic average of the 10 items
 egen index = rowmean(ec6 ec7 ec8 ec9 ec10 ec11 ec12 ec13 ec14 ec15)
 
-*Calculate the Cronbach's Alpha of the index and report it in a table along with the number of observations
+* Calculate the Cronbach's Alpha of the index and report it in a table along with the number of observations
 alpha ec6 ec7 ec8 ec9 ec10 ec11 ec12 ec13 ec14 ec15
 matrix result = (r(alpha), r(N))
 matrix colnames result = Cronbachs_Alpha N_observations
 matrix list result
 
 * Calculate ages in months
-* Convert string dates to Stata date format
 gen interview_date_new = date(interview_date, "YMD")
 gen birth_date_new = date(child_birthday, "YMD")
 
-* Extract year and month components
 gen birthyear = year(birth_date_new) //26 missing
 gen birthmonth = month(birth_date_new) //26 missing
 gen interviewyear = year(interview_date_new)
 gen interviewmonth = month(interview_date_new)
 
-* Calculate the difference in months between interview and birth date
 gen month_gap = (interviewyear - birthyear) * 12 + (interviewmonth - birthmonth)
 
 save "$unicef\Zimbabwe.dta", replace
 
-
-* Step 2: Calculate the conditional mean
+* Calculate the conditional mean
 collapse (mean) mean_index=index, by(month_gap)
 
-* Step 3: Plot the conditional mean
+* Plot the conditional mean
 twoway (line mean_index month_gap ), ///
        title("Conditional Mean of Index by Child's Age in Months") ///
        xlabel(, grid) ///
@@ -94,21 +88,10 @@ twoway (line mean_index month_gap ), ///
        xtitle("Child's Age in Months") ///
        ytitle("Mean Index")
 
-* Run the regression
-regress index age_months
-
-* Store the regression results
-estimates store reg1
-
-* Extract and display the required statistics
-matrix results = (e(b)[1,1], e(se)[1,1], e(r2), e(N))
-matrix colnames results = Coefficient_Std_Error R_squared N_observations
-matrix rownames results = Age_Coefficient
-matrix list results
-
-	
-	
-	
+* Run the regression 
+use "$unicef\Zimbabwe.dta"
+regress index month_gap
+esttab using results.txt, replace se r2 ar2 scalars(N) label
 	
 	
 	
